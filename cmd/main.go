@@ -45,11 +45,13 @@ func main() {
 	// Setup router
 	r := gin.Default()
 
+	r.Use(CORSMiddleware())
+
 	// Register routes
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
 	r.POST("/refresh", authHandler.Refresh)
-	r.POST("/company", authHandler.GetCompany)
+	r.GET("/company", authHandler.GetCompany)
 	r.POST("/logout", authHandler.Logout)
 	r.POST("/room/session", authHandler.CreateRoomSession)
 
@@ -61,5 +63,21 @@ func main() {
 
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("Server failed: %v", err)
+	}
+}
+
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
 	}
 }
