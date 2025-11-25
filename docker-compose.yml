@@ -36,7 +36,8 @@ services:
     environment:
       - GIN_MODE=release
       - CONFIG_PATH=/app/config/local.yaml
-    restart: on-failure
+      - JWT_PRIVATE_KEY=-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIO25XcFzX8NGODMYkTTLY6vgPV0A37HWW6gukxJoVaJfoAoGCCqGSM49\nAwEHoUQDQgAEQy0TSI95s6hkPCFyicGS8oVoAzB7yiQhjrsy9KV4QivobyYsb89Y\nxM7BJ+HHGhL83+DcKwRViLm3SlMV6NP/IQ==\n-----END EC PRIVATE KEY-----
+      - JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQy0TSI95s6hkPCFyicGS8oVoAzB7\nyiQhjrsy9KV4QivobyYsb89YxM7BJ+HHGhL83+DcKwRViLm3SlMV6NP/IQ==\n-----END PUBLIC KEY-----
 
 volumes:
   postgres_data:

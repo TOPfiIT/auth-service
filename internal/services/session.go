@@ -2,11 +2,10 @@ package services
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"fmt"
 	"time"
 
+	"github.com/TOPfiIT/auth-service/internal/config"
 	"github.com/TOPfiIT/auth-service/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,17 +23,24 @@ type SessionService struct {
 	refreshTTL time.Duration
 }
 
-func NewSessionService(accessTTLMinutes, refreshTTLHours int) (*SessionService, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+func NewSessionService(cfg *config.Config) (*SessionService, error) {
+	const op = "[SessionService.NewService]"
+
+	privateKey, err := cfg.GetPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("[SessionService] generate key pair: %w", err)
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	publicKey, err := cfg.GetPublicKey()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &SessionService{
 		privateKey: privateKey,
-		publicKey:  &privateKey.PublicKey,
-		accessTTL:  time.Duration(accessTTLMinutes) * time.Minute,
-		refreshTTL: time.Duration(refreshTTLHours) * time.Hour,
+		publicKey:  publicKey,
+		accessTTL:  time.Duration(cfg.JWT.AccessTTLMinutes) * time.Minute,
+		refreshTTL: time.Duration(cfg.JWT.RefreshTTLHours) * time.Hour,
 	}, nil
 }
 

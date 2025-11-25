@@ -24,10 +24,7 @@ func main() {
 	defer redis.Close()
 
 	//init services
-	SessionService, err := services.NewSessionService(
-		cfg.JWT.AccessTTLMinutes,
-		cfg.JWT.RefreshTTLHours,
-	)
+	SessionService, err := services.NewSessionService(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create session service: %v", err)
 	}
