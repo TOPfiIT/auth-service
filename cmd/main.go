@@ -45,6 +45,7 @@ func main() {
 	r.POST("/refresh", AuthHandler.Refresh)
 	r.POST("/login", AuthHandler.Login)
 	r.POST("/logout", AuthHandler.Logout)
+	r.POST("/room/session", AuthHandler.CreateRoomSession)
 	r.GET("/company", AuthHandler.GetCompany)
 
 	//start server
