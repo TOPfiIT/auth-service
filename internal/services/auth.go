@@ -159,10 +159,10 @@ func (s *AuthService) Login(ctx context.Context, name, password string) (*models
 	return tokens, nil
 }
 
-func (s *AuthService) Logout(ctx context.Context, accessToken string) error {
-	claims, err := s.sessionService.ValidateAccessToken(accessToken)
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
+	claims, err := s.sessionService.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		return fmt.Errorf("[AuthService] invalid token: %w", err)
+		return fmt.Errorf("[AuthService] invalid refresh token: %w", err)
 	}
 
 	companyID, err := uuid.Parse(claims.CompanyID)
