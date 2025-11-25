@@ -180,3 +180,12 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 
 	return nil
 }
+
+func (s *AuthService) CreateRoomSession(ctx context.Context, roomID uuid.UUID, expiryAt time.Time) (string, error) {
+	roomToken, err := s.sessionService.GenerateSessionToken(roomID, expiryAt)
+	if err != nil {
+		return "", fmt.Errorf("[AuthService] generate room token: %w", err)
+	}
+
+	return roomToken, nil
+}

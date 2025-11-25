@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/TOPfiIT/auth-service/internal/services"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -93,4 +94,26 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "successfully logged out"})
+}
+
+func (h *AuthHandler) CreateRoomSession(c *gin.Context) {
+	var req CreateRoomSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	roomID, err := uuid.Parse(req.RoomID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	roomToken, err := h.auth.CreateRoomSession(c.Request.Context(), roomID, req.ExpiryAt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, roomToken)
 }

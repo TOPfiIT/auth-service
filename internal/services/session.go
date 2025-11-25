@@ -187,3 +187,22 @@ func (s *SessionService) parseToken(tokenString string) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
+
+func (s *SessionService) GenerateSessionToken(roomID uuid.UUID, expiryAt time.Time) (string, error) {
+	const op = "[SessionService.GenerateSessionToken]"
+
+	token := jwt.New(jwt.SigningMethodES256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["room_id"] = roomID.String()
+	claims["expiry_at"] = expiryAt.Unix()
+	claims["exp"] = expiryAt.Unix()
+	claims["iat"] = time.Now().Unix()
+	claims["type"] = "room"
+
+	roomToken, err := token.SignedString(s.privateKey)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return roomToken, nil
+}
