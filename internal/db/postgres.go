@@ -37,10 +37,10 @@ func (p *PostgresDB) CreateCompany(ctx context.Context, name, password string) (
 	query := `
 		INSERT INTO companies (name, password_hash)
 		VALUES ($1, $2)
-		RETURNING id, name, password, created_at
+		RETURNING id, name, password_hash, created_at
 	`
 
-	if err := p.db.QueryRowContext(ctx, query, name).Scan(
+	if err := p.db.QueryRowContext(ctx, query, name, password).Scan(
 		&company.ID,
 		&company.Name,
 		&company.Password,
