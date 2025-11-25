@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/TOPfiIT/auth-service/internal/config"
@@ -12,41 +13,53 @@ import (
 )
 
 func main() {
-	//init config
+	log.Println("Starting auth service")
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC recovered: %v", r)
+		}
+	}()
+
 	cfg := config.MustLoad()
+	log.Println("✓ Config loaded")
 
-	//init postgres
-	pg := db.InitPostgres(cfg)
-	defer pg.Close()
+	pgDB := db.InitPostgres(cfg)
+	log.Println("✓ PostgreSQL connected")
 
-	//init redis
-	redis := db.InitRedisClient(cfg)
-	defer redis.Close()
+	redisClient := db.InitRedisClient(cfg)
+	log.Println("✓ Redis connected")
 
-	//init services
-	SessionService, err := services.NewSessionService(cfg)
+	sessionSvc, err := services.NewSessionService(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create session service: %v", err)
 	}
+	log.Println("✓ Session service created")
 
-	AuthService := services.NewAuthService(pg, redis, SessionService)
+	authSvc := services.NewAuthService(pgDB, redisClient, sessionSvc)
+	log.Println("✓ Auth service created")
 
-	//init handlers
-	AuthHandler := handlers.NewAuthHandler(AuthService)
+	authHandler := handlers.NewAuthHandler(authSvc)
+	log.Println("✓ Handlers created")
 
-	//create router
+	// Setup router
 	r := gin.Default()
 
-	//create routes
-	r.POST("/register", AuthHandler.Register)
-	r.POST("/refresh", AuthHandler.Refresh)
-	r.POST("/login", AuthHandler.Login)
-	r.POST("/logout", AuthHandler.Logout)
-	r.POST("/room/session", AuthHandler.CreateRoomSession)
-	r.GET("/company", AuthHandler.GetCompany)
+	// Register routes
+	r.POST("/register", authHandler.Register)
+	r.POST("/login", authHandler.Login)
+	r.POST("/refresh", authHandler.Refresh)
+	r.POST("/company", authHandler.GetCompany)
+	r.POST("/logout", authHandler.Logout)
+	r.POST("/room/session", authHandler.CreateRoomSession)
 
-	//start server
-	if err := r.Run(":8087"); err != nil {
-		log.Fatal(err)
+	log.Println("✓ Routes registered")
+
+	// Start server
+	addr := fmt.Sprintf(":%d", cfg.Port)
+	fmt.Printf("Server starting on %s", addr)
+
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("Server failed: %v", err)
 	}
 }

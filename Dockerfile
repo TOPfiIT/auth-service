@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -o /main \
     ./cmd
 
-FROM scratch AS runtime
+FROM alpine:latest AS runtime
 
 LABEL org.opencontainers.image.title="Auth Service" \
     org.opencontainers.image.description="Authentication service for AI Interviewer" \
@@ -31,8 +31,5 @@ LABEL org.opencontainers.image.title="Auth Service" \
 COPY --from=builder /main /main
 
 EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/main", "health"]
 
 ENTRYPOINT ["/main"]
