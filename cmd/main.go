@@ -8,6 +8,7 @@ import (
 	"github.com/TOPfiIT/auth-service/internal/db"
 	"github.com/TOPfiIT/auth-service/internal/http/handlers"
 	"github.com/TOPfiIT/auth-service/internal/services"
+	"github.com/TOPfiIT/auth-service/pkg/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,6 +43,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authSvc)
 	log.Println("✓ Handlers created")
 
+	authMiddleware := middlewares.AuthMiddleware(sessionSvc)
+
 	// Setup router
 	r := gin.Default()
 
@@ -51,8 +54,8 @@ func main() {
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
 	r.POST("/refresh", authHandler.Refresh)
-	r.GET("/company", authHandler.GetCompany)
-	r.POST("/logout", authHandler.Logout)
+	r.GET("/company", authMiddleware, authHandler.GetCompany)
+	r.POST("/logout", authMiddleware, authHandler.Logout)
 	r.POST("/room/session", authHandler.CreateRoomSession)
 
 	log.Println("✓ Routes registered")

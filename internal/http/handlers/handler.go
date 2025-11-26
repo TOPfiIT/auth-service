@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/TOPfiIT/auth-service/internal/services"
 	"github.com/google/uuid"
@@ -30,39 +31,33 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, tokens)
+	setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken, tokens.AccessTokenExpireAt, tokens.RefreshTokenExpireAt)
+
+	c.JSON(http.StatusCreated, gin.H{"message": "registered"})
 }
 
 func (h *AuthHandler) Refresh(c *gin.Context) {
-	var req RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no refresh token"})
 		return
 	}
 
-	tokens, err := h.auth.Refresh(c.Request.Context(), req.RefreshToken)
+	tokens, err := h.auth.Refresh(c.Request.Context(), refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, tokens)
+	setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken, tokens.AccessTokenExpireAt, tokens.RefreshTokenExpireAt)
+
+	c.JSON(http.StatusOK, gin.H{"message": "tokens refreshed"})
 }
 
 func (h *AuthHandler) GetCompany(c *gin.Context) {
-	var req TokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	companyID := c.GetString("company_id")
 
-	session, err := h.auth.GetCompany(c.Request.Context(), req.AccessToken)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, session)
+	c.JSON(http.StatusOK, gin.H{"company_id": companyID})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -78,21 +73,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, tokens)
+	setTokenCookies(c, tokens.AccessToken, tokens.RefreshToken, tokens.AccessTokenExpireAt, tokens.RefreshTokenExpireAt)
+
+	c.JSON(http.StatusOK, gin.H{"message": "login succeed"})
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
-	var req RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	if refreshToken, err := c.Cookie("refresh_token"); err == nil {
+		h.auth.Logout(c.Request.Context(), refreshToken)
 	}
 
-	if err := h.auth.Logout(c.Request.Context(), req.RefreshToken); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
+	clearTokenCookies(c)
 	c.JSON(http.StatusOK, gin.H{"message": "successfully logged out"})
 }
 
@@ -116,4 +107,44 @@ func (h *AuthHandler) CreateRoomSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, roomToken)
+}
+
+func setTokenCookies(c *gin.Context, accessToken, refreshToken string, accessExpiry, refreshExpiry time.Time) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  accessExpiry,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  refreshExpiry,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearTokenCookies(c *gin.Context) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	})
 }
