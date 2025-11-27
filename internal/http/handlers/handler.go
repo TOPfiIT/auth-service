@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TOPfiIT/auth-service/internal/services"
+	"github.com/TOPfiIT/auth-service/pkg/middlewares"
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -55,9 +56,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetCompany(c *gin.Context) {
-	companyID := c.GetString("company_id")
+	companyID := middlewares.GetCompanyID(c)
+	companyName := middlewares.GetCompanyName(c)
 
-	c.JSON(http.StatusOK, gin.H{"company_id": companyID})
+	c.JSON(http.StatusOK, gin.H{
+		"company_id":   companyID,
+		"company_name": companyName,
+	})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {

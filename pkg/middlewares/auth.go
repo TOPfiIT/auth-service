@@ -47,7 +47,10 @@ func AuthMiddleware(sessionService *services.SessionService) gin.HandlerFunc {
 			return
 		}
 
+		companyName, _ := claims["cname"].(string)
+
 		c.Set("company_id", companyID)
+		c.Set("company_name", companyName)
 		c.Next()
 	}
 }
@@ -55,4 +58,12 @@ func AuthMiddleware(sessionService *services.SessionService) gin.HandlerFunc {
 func GetCompanyID(c *gin.Context) string {
 	companyID, _ := c.Get("company_id")
 	return companyID.(string)
+}
+
+func GetCompanyName(c *gin.Context) string {
+	companyName, _ := c.Get("company_name")
+	if name, ok := companyName.(string); ok {
+		return name
+	}
+	return ""
 }
